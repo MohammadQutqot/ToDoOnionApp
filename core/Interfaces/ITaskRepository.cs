@@ -1,6 +1,6 @@
-﻿using core.ToDo.Domain;
+﻿using core.Entities;
 
-namespace core;
+namespace core.Interfaces;
 
 public interface ITaskRepository
 {

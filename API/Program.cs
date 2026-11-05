@@ -1,12 +1,17 @@
-﻿using Microsoft.EntityFrameworkCore;
-using core;
+﻿using core.Interfaces;
+using core.Services;
 using Infra;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
 builder.Services.AddSingleton<ITaskRepository, InMemoryTaskRepository>();
+builder.Services.AddScoped<ITaskService, TaskService>();
+
+builder.Services.AddSingleton<IUserRepository, InMemoryUserRepository>();
+builder.Services.AddScoped<IUserService, UserService>(); 
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));

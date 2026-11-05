@@ -1,5 +1,5 @@
-﻿using core;
-using core.ToDo.Domain;
+﻿using core.Entities;
+using core.Interfaces;
 
 namespace Infra;
 

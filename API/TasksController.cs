@@ -1,72 +1,32 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Infra;
-using core.ToDo.Domain;
+using core.Interfaces;
+using core.Resources;
 
 namespace API.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("tasks")]
     public class TasksController : ControllerBase
     {
-        private readonly AppDbContext _context;
+        private readonly ITaskService _taskService;
 
-        public TasksController(AppDbContext context)
+        public TasksController(ITaskService taskService)
         {
-            _context = context;
+            _taskService = taskService;
         }
 
-        [HttpGet]
-        [HttpGet]
-        public async Task<IActionResult> GetTasks([FromQuery] bool? isCompleted, [FromQuery] string? search, [FromQuery] string role, [FromQuery] string userId)
+        [HttpPost("list")]
+        public async Task<ActionResult<List<TaskReadResource>>> GetList([FromBody] TaskFilterResource filterResource)
         {
-            var query = _context.TaskItems.AsQueryable();
-            if (role != "Admin")
-            {
-                query = query.Where(t => t.UserId == userId);
-            }
-
-            if (isCompleted.HasValue)
-            {
-                query = query.Where(t => t.IsCompleted == isCompleted.Value);
-            }
-
-            if (!string.IsNullOrEmpty(search))
-            {
-                query = query.Where(t => t.Title.Contains(search));
-            }
-
-            var tasks = await query.ToListAsync();
-            return Ok(tasks);
+            var result = await _taskService.GetListAsync(filterResource);
+            return Ok(result);
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateTask(int id, [FromBody] TaskItem task)
+        [HttpPost("bulk")]
+        public async Task<ActionResult<List<TaskReadResource>>> BulkPost([FromBody] TaskInsertResource[] resources)
         {
-            if (id != task.Id)
-            {
-                return BadRequest("معرّف المهمة غير متطابق");
-            }
-
-            _context.Entry(task).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            var result = await _taskService.CreateAsync(resources);
+            return Ok(result);
         }
-
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteTask(int id)
-        {
-            var task = await _context.TaskItems.FindAsync(id);
-            if (task == null)
-            {
-                return NotFound("المهمة غير موجودة");
-            }
-
-            _context.TaskItems.Remove(task);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-    } 
-} 
+    }
+}

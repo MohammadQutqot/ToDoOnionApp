@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using core.ToDo.Domain;
+using core.Entities;
 
 namespace Infra
 {
