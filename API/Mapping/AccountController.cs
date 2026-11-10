@@ -1,9 +1,10 @@
 using API.DTOs;
+using API.Services;
 using core.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
-namespace API.Controllers
+namespace API.Mapping
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -11,15 +12,38 @@ namespace API.Controllers
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly ITokenService _tokenService;
 
-        public AccountController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager)
+        public AccountController(UserManager<ApplicationUser> userManager,
+                                 SignInManager<ApplicationUser> signInManager,
+                                 ITokenService tokenService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
+            _tokenService = tokenService;
+        }
+
+        [HttpPost("login")]
+        public async Task<ActionResult<UserDto>> Login(LoginDto loginDto)
+        {
+            var user = await _userManager.FindByEmailAsync(loginDto.Email);
+
+            if (user == null) return Unauthorized(new { message = "Invalid Email or Password" });
+
+            var result = await _signInManager.CheckPasswordSignInAsync(user, loginDto.Password, false);
+
+            if (!result.Succeeded) return Unauthorized(new { message = "Invalid Email or Password" });
+
+            return new UserDto
+            {
+                DisplayName = user.DisplayName,
+                Email = user.Email,
+                Token = await _tokenService.CreateTokenAsync(user, _userManager)
+            };
         }
 
         [HttpPost("register")]
-        public async Task<ActionResult> Register(RegisterDto registerDto)
+        public async Task<ActionResult<UserDto>> Register(RegisterDto registerDto)
         {
             var user = new ApplicationUser
             {
@@ -32,21 +56,14 @@ namespace API.Controllers
 
             if (!result.Succeeded) return BadRequest(result.Errors);
 
-            return Ok(new { message = "User registered successfully" });
-        }
+            await _userManager.AddToRoleAsync(user, "User");
 
-        [HttpPost("login")]
-        public async Task<ActionResult> Login(LoginDto loginDto)
-        {
-            var user = await _userManager.FindByEmailAsync(loginDto.Email);
-
-            if (user == null) return Unauthorized();
-
-            var result = await _signInManager.CheckPasswordSignInAsync(user, loginDto.Password, false);
-
-            if (!result.Succeeded) return Unauthorized();
-
-            return Ok(new { message = "Logged in successfully", email = user.Email, displayName = user.DisplayName });
+            return new UserDto
+            {
+                DisplayName = user.DisplayName,
+                Email = user.Email,
+                Token = await _tokenService.CreateTokenAsync(user, _userManager)
+            };
         }
     }
 }
