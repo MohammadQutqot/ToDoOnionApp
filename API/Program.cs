@@ -1,5 +1,6 @@
 ﻿using API.Services;
 using core.Entities;
+using core.Interfaces;
 using Infra;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -44,7 +45,7 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-
+builder.Services.AddScoped(typeof(IRepository<>), typeof(GenericRepository<>));
 var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {

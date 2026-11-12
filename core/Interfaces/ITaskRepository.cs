@@ -4,6 +4,9 @@ namespace core.Interfaces;
 
 public interface ITaskRepository
 {
-    List<TaskItem> GetAllTasks();
-    void AddTask(TaskItem task);
+    Task<IReadOnlyList<TaskItem>> GetListAsync(string userId, string? title, bool? isCompleted);
+    Task<TaskItem?> GetByIdAsync(int id);
+    Task AddAsync(TaskItem task);
+    Task UpdateAsync(TaskItem task);
+    Task DeleteAsync(TaskItem task);
 }
