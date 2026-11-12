@@ -3,9 +3,10 @@ using API.Services;
 using core.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-
-namespace API.Mapping
+using Microsoft.AspNetCore.Authorization;
+namespace API.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class AccountController : ControllerBase

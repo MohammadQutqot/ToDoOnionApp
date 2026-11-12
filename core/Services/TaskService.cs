@@ -13,9 +13,9 @@ namespace core.Services
             _taskRepository = taskRepository;
         }
 
-        public async Task<List<TaskReadResource>> GetListAsync(TaskFilterResource filter)
+        public async Task<List<TaskReadResource>> GetListAsync(string userId, TaskFilterResource filter)
         {
-            var tasks = _taskRepository.GetAllTasks();
+            var tasks = await _taskRepository.GetListAsync(userId, filter?.Title, filter?.IsCompleted);
 
             return tasks.Select(t => new TaskReadResource
             {
@@ -25,7 +25,7 @@ namespace core.Services
             }).ToList();
         }
 
-        public async Task<List<TaskReadResource>> CreateAsync(TaskInsertResource[] resources)
+        public async Task<List<TaskReadResource>> CreateAsync(string userId, TaskInsertResource[] resources)
         {
             var createdTasks = new List<TaskReadResource>();
 
@@ -34,11 +34,12 @@ namespace core.Services
                 var taskEntity = new TaskItem
                 {
                     Title = res.Title,
-                    IsCompleted = res.IsCompleted
+                    IsCompleted = res.IsCompleted,
+                    UserId = userId 
                 };
 
-                // إزالة await واستدعاء AddTask مباشرة
-                _taskRepository.AddTask(taskEntity);
+          
+                await _taskRepository.AddAsync(taskEntity);
 
                 createdTasks.Add(new TaskReadResource
                 {
