@@ -1,8 +1,8 @@
+using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using core.Interfaces;
-using Microsoft.AspNetCore.Http;
 
-namespace API.Services
+namespace ToDoOnionApp.API.Services
 {
     public class CurrentUserService : ICurrentUserService
     {
@@ -12,8 +12,21 @@ namespace API.Services
         {
             _httpContextAccessor = httpContextAccessor;
         }
-        public string? UserId => _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier)
-                                 ?? _httpContextAccessor.HttpContext?.User?.FindFirstValue("sub");
-        public string? Email => _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Email);
+
+        public string? UserId
+        {
+            get
+            {
+                return _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier);
+            }
+        }
+
+        public string? Email
+        {
+            get
+            {
+                return _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.Email);
+            }
+        }
     }
 }
