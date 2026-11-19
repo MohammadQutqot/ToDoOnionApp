@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using core.Interfaces;
 
-namespace ToDoOnionApp.API.Services
+namespace API.Services
 {
     public class CurrentUserService : ICurrentUserService
     {

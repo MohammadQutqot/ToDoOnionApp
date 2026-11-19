@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
 using core.Interfaces;
 using core.Resources;
 
@@ -17,31 +16,25 @@ namespace API.Controllers
         {
             _taskService = taskService;
         }
-        private string GetUserId() => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
         [HttpPost("list")]
         public async Task<ActionResult<List<TaskReadResource>>> GetList([FromBody] TaskFilterResource filterResource)
         {
-            var userId = GetUserId();
-            var result = await _taskService.GetListAsync(userId, filterResource);
+            var result = await _taskService.GetListAsync(filterResource);
             return Ok(result);
         }
 
         [HttpPost("bulk")]
         public async Task<ActionResult<List<TaskReadResource>>> BulkPost([FromBody] TaskInsertResource[] resources)
         {
-            var userId = GetUserId();
-            var result = await _taskService.CreateAsync(userId, resources);
+            var result = await _taskService.CreateAsync(resources);
             return Ok(result);
         }
-
-        // --- حط الـ Endpoints الجدد هون ---
 
         [HttpGet("{id}")]
         public async Task<ActionResult<TaskReadResource>> GetById(int id)
         {
-            var userId = GetUserId();
-            var task = await _taskService.GetByIdAsync(userId, id);
+            var task = await _taskService.GetByIdAsync(id);
 
             if (task == null) return NotFound();
 
@@ -51,8 +44,7 @@ namespace API.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult> Update(int id, [FromBody] TaskUpdateResource updateResource)
         {
-            var userId = GetUserId();
-            var success = await _taskService.UpdateAsync(userId, id, updateResource);
+            var success = await _taskService.UpdateAsync(id, updateResource);
 
             if (!success) return NotFound();
 
@@ -62,8 +54,7 @@ namespace API.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(int id)
         {
-            var userId = GetUserId();
-            var success = await _taskService.DeleteAsync(userId, id);
+            var success = await _taskService.DeleteAsync(id);
 
             if (!success) return NotFound();
 
