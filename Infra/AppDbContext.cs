@@ -9,7 +9,6 @@ namespace Infra
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
         }
-
         public DbSet<TaskItem> Tasks { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<TaskReminder> TaskReminders { get; set; }
@@ -24,12 +23,14 @@ namespace Infra
                 .HasOne(t => t.Category)
                 .WithMany(c => c.Tasks)
                 .HasForeignKey(t => t.CategoryId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.SetNull);
+
             modelBuilder.Entity<TaskItem>()
                 .HasOne(t => t.Reminder)
                 .WithOne(r => r.TaskItem)
                 .HasForeignKey<TaskReminder>(r => r.TaskItemId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
+
             modelBuilder.Entity<TaskTag>()
                 .HasKey(tt => new { tt.TaskItemId, tt.TagId });
 

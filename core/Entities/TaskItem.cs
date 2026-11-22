@@ -13,10 +13,10 @@ namespace core.Entities
         [ForeignKey(nameof(UserId))]
         public ApplicationUser? User { get; set; }
         public int? CategoryId { get; set; }
-
-        [ForeignKey(nameof(CategoryId))]
         public Category? Category { get; set; }
+
         public TaskReminder? Reminder { get; set; }
+
         public ICollection<TaskTag> TaskTags { get; set; } = new List<TaskTag>();
     }
 }
