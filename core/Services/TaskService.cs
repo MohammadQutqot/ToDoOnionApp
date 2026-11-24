@@ -39,14 +39,14 @@ namespace core.Services
 
         public async Task<List<TaskReadResource>> GetListAsync(TaskFilterResource filter)
         {
-            var userId = _currentUserService.UserId ?? string.Empty;
+            var userId = _currentUserService.UserId;
             var tasks = await _taskRepository.GetListAsync(userId, filter.Title, filter.IsCompleted);
             return _mapper.Map<List<TaskReadResource>>(tasks);
         }
 
         public async Task<List<TaskReadResource>> CreateAsync(TaskInsertResource[] resources)
         {
-            var userId = _currentUserService.UserId ?? string.Empty;
+            var userId = _currentUserService.UserId;
             var createdTasks = new List<TaskItem>();
 
             foreach (var res in resources)
