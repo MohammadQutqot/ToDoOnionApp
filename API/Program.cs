@@ -1,4 +1,7 @@
-﻿using API.Services;
+﻿using System.Security.Claims;
+using System.Text;
+using API.Services;
+using core.Constants;
 using core.Entities;
 using core.Interfaces;
 using core.Services;
@@ -7,7 +10,6 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -46,14 +48,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("AdminOnly", policy =>
-        policy.RequireRole("Admin"));
+    options.AddPolicy(Policies.AdminOnly, policy =>
+        policy.RequireRole(Roles.Admin));
 
-    options.AddPolicy("UserOrAdmin", policy =>
-        policy.RequireRole("User", "Admin"));
+    options.AddPolicy(Policies.UserOrAdmin, policy =>
+        policy.RequireRole(Roles.User, Roles.Admin));
 
-    options.AddPolicy("CanDeleteTasks", policy =>
-        policy.RequireClaim("Permission", "Tasks.Delete"));
+    options.AddPolicy(Policies.CanDeleteTasks, policy =>
+        policy.RequireClaim(Permissions.ClaimType, Permissions.TasksDelete));
 });
 
 builder.Services.AddScoped<ITokenService, TokenService>();
@@ -72,13 +74,26 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-    string[] roles = { "Admin", "User" };
+    string[] roles = { Roles.Admin, Roles.User };
 
-    foreach (var role in roles)
+    foreach (var roleName in roles)
     {
-        if (!await roleManager.RoleExistsAsync(role))
+        if (!await roleManager.RoleExistsAsync(roleName))
         {
-            await roleManager.CreateAsync(new IdentityRole(role));
+            await roleManager.CreateAsync(new IdentityRole(roleName));
+        }
+
+        if (roleName == Roles.Admin)
+        {
+            var adminRole = await roleManager.FindByNameAsync(Roles.Admin);
+            if (adminRole != null)
+            {
+                var existingClaims = await roleManager.GetClaimsAsync(adminRole);
+                if (!existingClaims.Any(c => c.Type == Permissions.ClaimType && c.Value == Permissions.TasksDelete))
+                {
+                    await roleManager.AddClaimAsync(adminRole, new Claim(Permissions.ClaimType, Permissions.TasksDelete));
+                }
+            }
         }
     }
 }
