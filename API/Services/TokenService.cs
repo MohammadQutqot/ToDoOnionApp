@@ -10,7 +10,10 @@ namespace API.Services
 {
     public interface ITokenService
     {
-        Task<string> CreateTokenAsync(ApplicationUser user, UserManager<ApplicationUser> userManager);
+        Task<string> CreateTokenAsync(
+            ApplicationUser user,
+            UserManager<ApplicationUser> userManager,
+            RoleManager<IdentityRole> roleManager);
     }
 
     public class TokenService : ITokenService
@@ -21,22 +24,38 @@ namespace API.Services
         public TokenService(IConfiguration config)
         {
             _config = config;
-            _key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
+            _key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
         }
 
-        public async Task<string> CreateTokenAsync(ApplicationUser user, UserManager<ApplicationUser> userManager)
+        public async Task<string> CreateTokenAsync(
+            ApplicationUser user,
+            UserManager<ApplicationUser> userManager,
+            RoleManager<IdentityRole> roleManager)
         {
             var claims = new List<Claim>
             {
-                new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email!),
                 new Claim(JwtRegisteredClaimNames.NameId, user.Id),
                 new Claim("DisplayName", user.DisplayName ?? "")
             };
 
             var roles = await userManager.GetRolesAsync(user);
-            foreach (var role in roles)
+            foreach (var roleName in roles)
             {
-                claims.Add(new Claim(ClaimTypes.Role, role));
+                claims.Add(new Claim(ClaimTypes.Role, roleName));
+
+                var role = await roleManager.FindByNameAsync(roleName);
+                if (role != null)
+                {
+                    var roleClaims = await roleManager.GetClaimsAsync(role);
+                    foreach (var roleClaim in roleClaims)
+                    {
+                        if (!claims.Any(c => c.Type == roleClaim.Type && c.Value == roleClaim.Value))
+                        {
+                            claims.Add(roleClaim);
+                        }
+                    }
+                }
             }
 
             var creds = new SigningCredentials(_key, SecurityAlgorithms.HmacSha512Signature);
