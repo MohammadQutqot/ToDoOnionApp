@@ -1,5 +1,4 @@
-﻿using System.Security.Claims;
-using System.Text;
+﻿
 using API.Services;
 using core.Constants;
 using core.Entities;
@@ -10,6 +9,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
+using Microsoft.OpenApi.Models;
+using System.Security.Claims;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,7 +20,8 @@ builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddIdentityCore<ApplicationUser>(options =>
 {
@@ -28,6 +32,7 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
     options.Password.RequiredLength = 6;
 })
 .AddRoles<IdentityRole>()
+.AddSignInManager()
 .AddEntityFrameworkStores<AppDbContext>()
 .AddDefaultTokenProviders();
 
@@ -37,7 +42,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
             ValidateIssuer = true,
             ValidIssuer = builder.Configuration["Jwt:Issuer"],
             ValidateAudience = true,
@@ -59,9 +65,41 @@ builder.Services.AddAuthorization(options =>
 });
 
 builder.Services.AddScoped<ITokenService, TokenService>();
-builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+builder.Services.AddAutoMapper(
+    cfg => { },
+    AppDomain.CurrentDomain.GetAssemblies());
+
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter your JWT token"
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
 builder.Services.AddScoped(typeof(IRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 
@@ -73,7 +111,9 @@ var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+    var roleManager = scope.ServiceProvider
+        .GetRequiredService<RoleManager<IdentityRole>>();
+
     string[] roles = { Roles.Admin, Roles.User };
 
     foreach (var roleName in roles)
@@ -86,12 +126,18 @@ using (var scope = app.Services.CreateScope())
         if (roleName == Roles.Admin)
         {
             var adminRole = await roleManager.FindByNameAsync(Roles.Admin);
+
             if (adminRole != null)
             {
                 var existingClaims = await roleManager.GetClaimsAsync(adminRole);
-                if (!existingClaims.Any(c => c.Type == Permissions.ClaimType && c.Value == Permissions.TasksDelete))
+
+                if (!existingClaims.Any(c =>
+                    c.Type == Permissions.ClaimType &&
+                    c.Value == Permissions.TasksDelete))
                 {
-                    await roleManager.AddClaimAsync(adminRole, new Claim(Permissions.ClaimType, Permissions.TasksDelete));
+                    await roleManager.AddClaimAsync(
+                        adminRole,
+                        new Claim(Permissions.ClaimType, Permissions.TasksDelete));
                 }
             }
         }
@@ -108,4 +154,5 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
 app.Run();

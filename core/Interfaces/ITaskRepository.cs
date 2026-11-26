@@ -2,11 +2,16 @@
 
 namespace core.Interfaces;
 
-public interface ITaskRepository
+public interface ITaskRepository : IRepository<TaskItem>
 {
-    Task<IReadOnlyList<TaskItem>> GetListAsync(string userId, string? title, bool? isCompleted);
-    Task<TaskItem?> GetByIdAsync(int id);
-    Task AddAsync(TaskItem task);
+    Task<(IReadOnlyList<TaskItem> Items, int TotalCount)> GetListAsync(
+        string userId,
+        string? title,
+        bool? isCompleted,
+        string? sortBy,
+        int pageNumber,
+        int pageSize);
+
     Task UpdateAsync(TaskItem task);
     Task DeleteAsync(TaskItem task);
 }

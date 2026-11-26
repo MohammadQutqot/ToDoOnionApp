@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using core.Constants;
 using core.Interfaces;
@@ -19,14 +20,16 @@ namespace API.Controllers
         }
 
         [HttpPost("list")]
-        public async Task<ActionResult<List<TaskReadResource>>> GetList([FromBody] TaskFilterResource filterResource)
+        public async Task<ActionResult> GetList(
+            [FromBody] TaskFilterResource filterResource)
         {
             var result = await _taskService.GetListAsync(filterResource);
             return Ok(result);
         }
 
         [HttpPost("bulk")]
-        public async Task<ActionResult<List<TaskReadResource>>> BulkPost([FromBody] TaskInsertResource[] resources)
+        public async Task<ActionResult<List<TaskReadResource>>> BulkPost(
+            [FromBody] TaskInsertResource[] resources)
         {
             var result = await _taskService.CreateAsync(resources);
             return Ok(result);
@@ -37,17 +40,21 @@ namespace API.Controllers
         {
             var task = await _taskService.GetByIdAsync(id);
 
-            if (task == null) return NotFound();
+            if (task == null)
+                return NotFound();
 
             return Ok(task);
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult> Update(int id, [FromBody] TaskUpdateResource updateResource)
+        public async Task<ActionResult> Update(
+            int id,
+            [FromBody] TaskUpdateResource updateResource)
         {
             var success = await _taskService.UpdateAsync(id, updateResource);
 
-            if (!success) return NotFound();
+            if (!success)
+                return NotFound();
 
             return NoContent();
         }
@@ -58,7 +65,8 @@ namespace API.Controllers
         {
             var success = await _taskService.DeleteAsync(id);
 
-            if (!success) return NotFound();
+            if (!success)
+                return NotFound();
 
             return NoContent();
         }
