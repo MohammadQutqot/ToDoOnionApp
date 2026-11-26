@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using core.Constants;
 using core.Interfaces;
 using core.Resources;
 
@@ -51,6 +52,7 @@ namespace API.Controllers
             return NoContent();
         }
 
+        [Authorize(Policy = Policies.CanDeleteTasks)]
         [HttpDelete("{id}")]
         public async Task<ActionResult> Delete(int id)
         {
